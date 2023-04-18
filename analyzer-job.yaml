@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{name}"
+spec:
+  template:
+    spec:
+      volumes:
+        - name: ort-scratch
+          hostPath:
+            path: /opt/ort-scratch
+            type: Directory
+      initContainers:
+      - name: cleanup
+        image: alpine/git:v2.36.3
+        command:
+          - "rm"
+          - "-rf"
+          - "/opt/ort-scratch/{parent_name}"
+        volumeMounts:
+          - name: ort-scratch
+            mountPath: /opt/ort-scratch
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+      - name: git
+        image: alpine/git:v2.36.3
+        command:
+          - "git"
+          - "clone"
+          - "--depth"
+          - "1"
+          - "{repo_url}"
+          - "/opt/ort-scratch/{parent_name}"
+        volumeMounts:
+          - name: ort-scratch
+            mountPath: /opt/ort-scratch
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+      - name: fix-perms
+        image: alpine/git:v2.36.3
+        command:
+          - "chmod"
+          - "777"
+          - "/opt/ort-scratch/{parent_name}"
+        volumeMounts:
+          - name: ort-scratch
+            mountPath: /opt/ort-scratch
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "200m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+      containers:
+      - name: ort
+        image: haikoschol/oss-review-toolkit:5eb8162a9
+        args:
+          - "--info"
+          - "analyze"
+          - "-i"
+          - "/opt/ort-scratch/{parent_name}"
+          - "-o"
+          - "/opt/ort-scratch/{parent_name}"
+        volumeMounts:
+          - name: ort-scratch
+            mountPath: /opt/ort-scratch
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: 1
+          limits:
+            memory: "2Gi"
+            cpu: 2
+      restartPolicy: Never
+  backoffLimit: 1
+

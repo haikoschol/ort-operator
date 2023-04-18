@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{name}"
+  annotations:
+    repoUrl: "{repo_url}"
+spec:
+  template:
+    spec:
+      volumes:
+        - name: ort-scratch
+          hostPath:
+            path: /opt/ort-scratch
+            type: Directory
+      containers:
+      - name: ort
+        image: haikoschol/oss-review-toolkit:5eb8162a9
+        args: ["--info", "report",  "--report-formats", "WebApp", "-i", "/opt/ort-scratch/{parent_name}/scan-result.yml", "-o", "/opt/ort-scratch/{parent_name}/"]
+        volumeMounts:
+          - name: ort-scratch
+            mountPath: /opt/ort-scratch
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "0.5"
+          limits:
+            memory: "1Gi"
+            cpu: 1
+      restartPolicy: Never
+  backoffLimit: 1

@@ -1,0 +1,6 @@
+apiVersion: inocybe.io/v1
+kind: OrtRun
+metadata:
+  name: bob-fridge-banana-boat
+spec:
+  repoUrl: "https://github.com/haikoschol/check-exif.git"

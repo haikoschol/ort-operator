@@ -1,0 +1,31 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: ortruns.inocybe.io
+spec:
+  scope: Namespaced
+  group: inocybe.io
+  names:
+    kind: OrtRun
+    plural: ortruns
+    singular: ortrun
+    shortNames:
+      - ors
+      - or
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                repoUrl:
+                  type: string
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
