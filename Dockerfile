@@ -11,5 +11,5 @@ COPY *.yaml ./
 RUN pip install -r ./requirements.txt
 
 USER nonroot
-CMD ["kopf", "run", "/app/ort_operator.py"]
+CMD ["kopf", "run", "-n", "ort", "/app/ort_operator.py"]
 
