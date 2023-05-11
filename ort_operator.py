@@ -29,7 +29,7 @@ TEMPLATES = {
     REPORTER: f'{REPORTER}-job.yaml',
 }
 # possible job states for each stage
-PENDING, CREATED, RUNNING, SUCCEEDED, FAILED = 'Pending', 'Created', 'Running', 'Succeeded', 'Failed'
+PENDING, CREATED, RUNNING, SUCCEEDED, FAILED, ABORTED = 'Pending', 'Created', 'Running', 'Succeeded', 'Failed', 'Aborted'
 
 
 @kopf.on.create('ortruns')
@@ -58,7 +58,12 @@ def check_jobs(name, namespace, body, patch, **_):
 
     if status[ANALYZER] in (CREATED, RUNNING):
         job = get_job(ANALYZER, name, namespace)
-        patch.status[ANALYZER] = get_job_status(job)
+        js = get_job_status(job)
+        patch.status[ANALYZER] = js
+
+        if js == FAILED:
+            patch.status[SCANNER] = ABORTED
+            patch.status[REPORTER] = ABORTED
 
     elif status[ANALYZER] == SUCCEEDED and status[SCANNER] == PENDING:
         create_job(SCANNER, name, namespace, repo_url)
@@ -66,7 +71,11 @@ def check_jobs(name, namespace, body, patch, **_):
 
     elif status[SCANNER] in (CREATED, RUNNING):
         job = get_job(SCANNER, name, namespace)
-        patch.status[SCANNER] = get_job_status(job)
+        js = get_job_status(job)
+        patch.status[SCANNER] = js
+
+        if js == FAILED:
+            patch.status[REPORTER] = ABORTED
 
     elif status[SCANNER] == SUCCEEDED and status[REPORTER] == PENDING:
         create_job(REPORTER, name, namespace, repo_url)
@@ -76,7 +85,7 @@ def check_jobs(name, namespace, body, patch, **_):
         job = get_job(REPORTER, name, namespace)
         patch.status[REPORTER] = get_job_status(job)
 
-    elif status[REPORTER] == SUCCEEDED or status[ANALYZER] == FAILED or status[SCANNER] == FAILED or status[REPORTER] == FAILED:
+    if status[REPORTER] in (SUCCEEDED, FAILED, ABORTED):
         patch.metadata.annotations['inProgress'] = None
 
 
