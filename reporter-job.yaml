@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: "{name}"
   annotations:
-    repoUrl: "{repo_url}"
+    ortStage: reporter
 spec:
   template:
     spec:
@@ -27,4 +27,4 @@ spec:
             memory: "1Gi"
             cpu: 1
       restartPolicy: Never
-  backoffLimit: 1
+  backoffLimit: 0

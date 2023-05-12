@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: "{name}"
   annotations:
-    repoUrl: "{repo_url}"
+    ortStage: scanner
 spec:
   template:
     spec:
@@ -33,5 +33,4 @@ spec:
             memory: "4Gi"
             cpu: 2
       restartPolicy: Never
-  backoffLimit: 1
-
+  backoffLimit: 0

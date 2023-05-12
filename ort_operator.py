@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
-
+import logging
 import os
 import kopf
 import kubernetes
@@ -22,14 +22,21 @@ import yaml
 
 # stages of an ORT run
 ANALYZER, SCANNER, REPORTER = 'analyzer', 'scanner', 'reporter'
+
 # job templates
 TEMPLATES = {
     ANALYZER: f'{ANALYZER}-job.yaml',
     SCANNER: f'{SCANNER}-job.yaml',
     REPORTER: f'{REPORTER}-job.yaml',
 }
+
 # possible job states for each stage
 PENDING, CREATED, RUNNING, SUCCEEDED, FAILED, ABORTED = 'Pending', 'Created', 'Running', 'Succeeded', 'Failed', 'Aborted'
+
+
+@kopf.on.startup()
+def configure(settings: kopf.OperatorSettings, **_):
+    settings.posting.level = logging.ERROR
 
 
 @kopf.on.create('ortruns')
@@ -40,76 +47,47 @@ def create_fn(name, namespace, spec, patch, **_):
 
     create_job(ANALYZER, name, namespace, repo_url)
 
-    patch.metadata.annotations['inProgress'] = '1'
     patch.status[ANALYZER] = CREATED
     patch.status[SCANNER] = PENDING
     patch.status[REPORTER] = PENDING
 
 
-# HACK FIXME there must be a way of tracking the jobs using handlers instead of timers
-@kopf.timer('ortruns', interval=1, annotations={'inProgress': kopf.PRESENT})
-def check_jobs(name, namespace, body, patch, **_):
-    spec = get_resource_attr('spec', body)
-    repo_url = spec.get('repoUrl')
-    if not repo_url:
-        raise kopf.PermanentError('OrtRun {name} somehow lost its repoUrl')
-
-    status = get_resource_attr('status', body)
-
-    if status[ANALYZER] in (CREATED, RUNNING):
-        job = get_job(ANALYZER, name, namespace)
-        js = get_job_status(job)
-        patch.status[ANALYZER] = js
-
-        if js == FAILED:
-            patch.status[SCANNER] = ABORTED
-            patch.status[REPORTER] = ABORTED
-
-    elif status[ANALYZER] == SUCCEEDED and status[SCANNER] == PENDING:
-        create_job(SCANNER, name, namespace, repo_url)
-        patch.status[SCANNER] = CREATED
-
-    elif status[SCANNER] in (CREATED, RUNNING):
-        job = get_job(SCANNER, name, namespace)
-        js = get_job_status(job)
-        patch.status[SCANNER] = js
-
-        if js == FAILED:
-            patch.status[REPORTER] = ABORTED
-
-    elif status[SCANNER] == SUCCEEDED and status[REPORTER] == PENDING:
-        create_job(REPORTER, name, namespace, repo_url)
-        patch.status[REPORTER] = CREATED
-
-    elif status[REPORTER] in (CREATED, RUNNING):
-        job = get_job(REPORTER, name, namespace)
-        patch.status[REPORTER] = get_job_status(job)
-
-    if status[REPORTER] in (SUCCEEDED, FAILED, ABORTED):
-        patch.metadata.annotations['inProgress'] = None
+def is_modified(event, **_):
+    return event.get('type', '') == 'MODIFIED'
 
 
-def get_job(stage, parent_name, namespace):
-    name = f'{stage}-{parent_name}'
-    api = kubernetes.client.BatchV1Api()
+@kopf.on.event('batch', 'v1', 'jobs', annotations={'ortStage': kopf.PRESENT}, when=is_modified)
+def handle_job_status_change(meta, body, logger, **_):
+    stage = meta.annotations['ortStage']
+    stage_status = get_stage_status(body.get('status', {}))
+    repo_url = body.get('spec', {}).get('repoUrl', '')
+    _, parent_name = meta.name.split('-', 1)
 
-    try:
-        job = api.read_namespaced_job(name, namespace)
-    except kubernetes.client.exceptions.ApiException:
-        raise kopf.PermanentError(f'job with name "{name}" not found')
+    update_ortrun_status(parent_name, meta.namespace, stage, stage_status)
 
-    return job
+    if stage_status == SUCCEEDED:
+        next_stage = SCANNER if stage == ANALYZER else REPORTER if stage == SCANNER else None
+        if next_stage:
+            create_job(next_stage, parent_name, meta.namespace, repo_url)
+            update_ortrun_status(parent_name, meta.namespace, next_stage, CREATED)
+
+    elif stage_status == FAILED and stage != REPORTER:
+        update_ortrun_status(parent_name, meta.namespace, REPORTER, ABORTED)
+        if stage == ANALYZER:
+            update_ortrun_status(parent_name, meta.namespace, SCANNER, ABORTED)
 
 
-def get_job_status(job):
-    if job.status.failed is not None and job.status.failed > 0:
+def get_stage_status(job_status):
+    if job_status.get('failed', 0) > 0:
         return FAILED
-    if job.status.succeeded is not None and job.status.succeeded > 0:
 
+    if job_status.get('succeeded', 0) > 0:
         return SUCCEEDED
-    if job.status.active is not None and job.status.active > 0:
+
+    if job_status.get('active', 0) > 0:
         return RUNNING
-    return CREATED
+
+    return PENDING
 
 
 def create_job(stage, parent_name, namespace, repo_url):
@@ -126,10 +104,10 @@ def create_job(stage, parent_name, namespace, repo_url):
     return api.create_namespaced_job(namespace, data)
 
 
-def get_resource_attr(attr, body):
-    val = body.get(attr)
+def update_ortrun_status(name, namespace, stage, status):
+    api = kubernetes.client.CustomObjectsApi()
 
-    if not val:
-        raise kopf.PermanentError(f'resource has no {attr}. got {val!r}')
-
-    return val
+    try:
+        api.patch_namespaced_custom_object('inocybe.io', 'v1', namespace, 'ortruns', name, {'status': {stage: status}})
+    except kubernetes.client.exceptions.ApiException:
+        raise kopf.PermanentError(f'updating status of run "{name}" for stage "{stage}" to "{status}" failed')

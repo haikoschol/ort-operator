@@ -2,6 +2,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{name}"
+  annotations:
+    ortStage: analyzer
 spec:
   template:
     spec:
@@ -83,5 +85,4 @@ spec:
             memory: "2Gi"
             cpu: 2
       restartPolicy: Never
-  backoffLimit: 1
-
+  backoffLimit: 0
