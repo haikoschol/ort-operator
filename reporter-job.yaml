@@ -14,7 +14,7 @@ spec:
             type: Directory
       containers:
       - name: ort
-        image: haikoschol/oss-review-toolkit:5eb8162a9
+        image: haikoschol/oss-review-toolkit:latest
         args: ["--info", "report",  "--report-formats", "WebApp", "-i", "/opt/ort-scratch/{parent_name}/scan-result.yml", "-o", "/opt/ort-scratch/{parent_name}/"]
         volumeMounts:
           - name: ort-scratch
