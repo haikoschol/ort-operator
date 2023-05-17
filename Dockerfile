@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM cgr.dev/chainguard/python:3.11
 
 RUN groupadd -g 10001 nonroot
 RUN useradd -u 10001 -g 10001 -d /app nonroot
