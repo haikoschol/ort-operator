@@ -28,8 +28,10 @@ jobs:
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
+        env:
+          FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         with:
           context: .
           push: true
-          tags: ${{ env.IMAGE_NAME }}:latest,${{ env.IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ env.FULL_IMAGE_NAME }}:latest,${{ env.FULL_IMAGE_NAME }}:${{ github.sha }}
 
