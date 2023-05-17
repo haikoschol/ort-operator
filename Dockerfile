@@ -1,14 +1,19 @@
-FROM cgr.dev/chainguard/python:3.11
-
-RUN groupadd -g 10001 nonroot
-RUN useradd -u 10001 -g 10001 -d /app nonroot
+FROM cgr.dev/chainguard/python:3.11-dev as builder
 
 WORKDIR /app
-COPY LICENSE ./
 COPY requirements.txt ./
+RUN pip install -r requirements.txt --user
+
+FROM cgr.dev/chainguard/python:3.11
+
+WORKDIR /app
+
+COPY --from=builder /home/nonroot/.local/lib/python3.11/site-packages /home/nonroot/.local/lib/python3.11/site-packages
+COPY --from=builder /app /app
+
+COPY LICENSE ./
 COPY *.py ./
 COPY *.yaml ./
-RUN pip install -r ./requirements.txt
 
 USER nonroot
 CMD ["kopf", "run", "-n", "ort", "/app/ort_operator.py"]
