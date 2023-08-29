@@ -1,10 +1,10 @@
-FROM cgr.dev/chainguard/python:3.11-dev as builder
+FROM cgr.dev/chainguard/python:latest-dev as builder
 
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install -r requirements.txt --user
 
-FROM cgr.dev/chainguard/python:3.11
+FROM cgr.dev/chainguard/python:latest
 
 WORKDIR /app
 
