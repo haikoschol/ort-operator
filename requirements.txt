@@ -12,7 +12,7 @@ click==8.1.7
 decorator==5.1.1
 executing==1.2.0
 frozenlist==1.4.0
-google-auth==2.22.0
+google-auth==2.23.0
 idna==3.4
 ipython==8.15.0
 iso8601==1.1.0
