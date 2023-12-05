@@ -30,7 +30,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
-Pygments==2.17.1
+Pygments==2.17.2
 python-dateutil==2.8.2
 python-json-logger==2.0.7
 PyYAML==6.0.1
