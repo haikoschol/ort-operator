@@ -20,7 +20,7 @@ jedi==0.19.1
 kopf==1.37.1
 kubernetes==29.0.0
 matplotlib-inline==0.1.6
-multidict==6.0.4
+multidict==6.0.5
 oauthlib==3.2.2
 parso==0.8.3
 pexpect==4.9.0
