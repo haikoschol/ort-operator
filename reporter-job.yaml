@@ -9,9 +9,14 @@ spec:
     spec:
       volumes:
         - name: ort-scratch
-          hostPath:
-            path: /opt/ort-scratch
-            type: Directory
+          persistentVolumeClaim:
+            claimName: ort-scratch-pvc
+        - name: ort-config-volume
+          configMap:
+            name: ort-config
+            items:
+              - key: config.yml
+                path: config.yml
       containers:
       - name: ort
         image: haikoschol/oss-review-toolkit:latest
@@ -19,12 +24,15 @@ spec:
         volumeMounts:
           - name: ort-scratch
             mountPath: /opt/ort-scratch
+          - name: ort-config-volume
+            mountPath: /etc/ort
+            readOnly: true
         resources:
           requests:
             memory: "500Mi"
             cpu: "0.5"
           limits:
             memory: "1Gi"
-            cpu: 1
+            cpu: "1"
       restartPolicy: Never
   backoffLimit: 0
