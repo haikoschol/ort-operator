@@ -10,7 +10,7 @@ spec:
       volumes:
         - name: ort-scratch
           persistentVolumeClaim:
-            claimName: ort-scratch-pvc
+            claimName: "{parent_name}-pvc"
         - name: ort-config-volume
           configMap:
             name: ort-config

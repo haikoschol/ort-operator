@@ -45,6 +45,7 @@ def create_fn(name, namespace, spec, patch, **_):
     if not repo_url:
         raise kopf.PermanentError('OrtRun needs a repoUrl')
 
+    create_pvc(name, namespace)
     create_job(ANALYZER, name, namespace, repo_url)
 
     patch.status[ANALYZER] = CREATED
@@ -102,6 +103,19 @@ def create_job(stage, parent_name, namespace, repo_url):
     kopf.adopt(data)
     api = kubernetes.client.BatchV1Api()
     return api.create_namespaced_job(namespace, data)
+
+
+def create_pvc(parent_name, namespace):
+    path = os.path.join(os.path.dirname(__file__), 'pvc.yaml')
+
+    with open(path, 'rt') as f:
+        tmpl = f.read()
+        text = tmpl.format(parent_name=parent_name)
+        data = yaml.safe_load(text)
+
+    kopf.adopt(data)
+    api = kubernetes.client.CoreV1Api()
+    return api.create_namespaced_persistent_volume_claim(namespace, data)
 
 
 def update_ortrun_status(name, namespace, stage, status):
