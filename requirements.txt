@@ -14,7 +14,7 @@ executing==2.0.1
 frozenlist==1.4.1
 google-auth==2.28.1
 idna==3.6
-ipython==8.22.1
+ipython==8.22.2
 iso8601==2.1.0
 jedi==0.19.1
 kopf==1.37.1
