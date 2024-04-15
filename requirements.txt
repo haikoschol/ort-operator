@@ -19,7 +19,7 @@ iso8601==2.1.0
 jedi==0.19.1
 kopf==1.37.2
 kubernetes==29.0.0
-matplotlib-inline==0.1.6
+matplotlib-inline==0.1.7
 multidict==6.0.5
 oauthlib==3.2.2
 parso==0.8.4
