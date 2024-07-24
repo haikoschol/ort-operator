@@ -27,7 +27,7 @@ pexpect==4.9.0
 pickleshare==0.7.5
 prompt-toolkit==3.0.47
 ptyprocess==0.7.0
-pure-eval==0.2.2
+pure-eval==0.2.3
 pyasn1==0.6.0
 pyasn1-modules==0.4.0
 Pygments==2.18.0
