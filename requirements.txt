@@ -5,7 +5,7 @@ asttokens==2.4.1
 async-timeout==4.0.3
 attrs==24.2.0
 backcall==0.2.0
-cachetools==5.4.0
+cachetools==5.5.0
 certifi==2024.7.4
 charset-normalizer==3.3.2
 click==8.1.7
